@@ -110,20 +110,32 @@ const ManualUpdateScreen = () => {
     return outDateTime > inDateTime;
   };
 
+  const isReportFullyValid = (report) => {
+    if (!isReportValid(report)) return false;
+    
+    const inDateTime = new Date(`${report.dateIn}T${report.timeIn}:00`);
+    const outDateTime = new Date(`${report.dateOut}T${report.timeOut}:00`);
+    
+    // בדיקת תקינות התאריכים והשעות
+    if (outDateTime <= inDateTime) return false;
+    
+    // אם התאריכים זהים, בדיקת הפרש של לפחות דקה
+    if (report.dateIn === report.dateOut) {
+      const inTime = new Date(`2000-01-01T${report.timeIn}:00`);
+      const outTime = new Date(`2000-01-01T${report.timeOut}:00`);
+      if (outTime - inTime < 60000) return false;
+    }
+    
+    return true;
+  };
+
   const areAllReportsValid = () => {
-    return reports.every(report => isReportValid(report) && isReportTimeValid(report));
+    return reports.every(report => isReportFullyValid(report));
   };
 
   const handleSave = () => {
-    const allValid = reports.every(isReportValid);
-    if (!allValid) {
-      setToastMessage('יש למלא את כל השדות בכל הדיווחים לפני שמירה');
-      return;
-    }
-    
-    const allTimeValid = reports.every(isReportTimeValid);
-    if (!allTimeValid) {
-      setToastMessage('לא ניתן לשמור דיווחים עם שעות לא תקינות');
+    if (!areAllReportsValid()) {
+      setToastMessage('לא ניתן לשמור דיווחים עם נתונים שגויים או חסרים');
       return;
     }
 
