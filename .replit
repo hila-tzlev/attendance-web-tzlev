@@ -6,3 +6,19 @@ channel = "stable-24_05"
 
 [deployment]
 run = ["sh", "-c", "npm install"]
+
+[workflows]
+runButton = "React Dev"
+
+[[workflows.workflow]]
+name = "React Dev"
+author = 40619095
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd attendance-web && npm install && npm start"
+
+[[ports]]
+localPort = 3000
+externalPort = 80
