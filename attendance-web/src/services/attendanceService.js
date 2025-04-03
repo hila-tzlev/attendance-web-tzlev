@@ -2,33 +2,53 @@
 const db = require('../config/db');
 
 const attendanceService = {
-  async saveAttendanceReport(report) {
+  async login(employeeId, password) {
+    const query = 'SELECT * FROM employees WHERE employee_id = $1 AND password = $2';
+    const result = await db.query(query, [employeeId, password]);
+    return result.rows[0];
+  },
+
+  async saveAttendanceRecord(record) {
     const query = `
-      INSERT INTO attendance_reports 
-      (employee_id, date_in, time_in, date_out, time_out) 
-      VALUES ($1, $2, $3, $4, $5) 
+      INSERT INTO attendance_records (employee_id, date, time_in, time_out, approved)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING *
     `;
-    
     const values = [
-      report.employeeId,
-      report.dateIn,
-      report.timeIn,
-      report.dateOut,
-      report.timeOut
+      record.employeeId,
+      record.date,
+      record.timeIn,
+      record.timeOut,
+      false // דיווחים חדשים תמיד מתחילים כלא מאושרים
     ];
-    
     return db.query(query, values);
   },
 
   async getEmployeeReports(employeeId) {
-    const query = 'SELECT * FROM attendance_reports WHERE employee_id = $1 ORDER BY date_in DESC';
-    return db.query(query, [employeeId]);
+    const query = `
+      SELECT * FROM attendance_records 
+      WHERE employee_id = $1 
+      ORDER BY date DESC, time_in DESC
+    `;
+    const result = await db.query(query, [employeeId]);
+    return result.rows;
   },
 
-  async getAllReports() {
-    const query = 'SELECT * FROM attendance_reports ORDER BY date_in DESC';
-    return db.query(query);
+  async getPendingApprovals() {
+    const query = `
+      SELECT ar.*, e.name as employee_name
+      FROM attendance_records ar
+      JOIN employees e ON ar.employee_id = e.employee_id
+      WHERE ar.approved = false
+      ORDER BY ar.date DESC
+    `;
+    const result = await db.query(query);
+    return result.rows;
+  },
+
+  async approveRecord(recordId) {
+    const query = 'UPDATE attendance_records SET approved = true WHERE id = $1 RETURNING *';
+    return db.query(query, [recordId]);
   }
 };
 
