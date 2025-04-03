@@ -60,14 +60,26 @@ const ManualUpdateScreen = () => {
       updatedReports[index].timeOut = newTimeOut;
     }
 
-    // בדיקת תקינות שעת יציאה
-    if (field === 'timeOut' && updatedReports[index].timeIn) {
-      const inTime = new Date(`2000-01-01T${updatedReports[index].timeIn}:00`);
-      const outTime = new Date(`2000-01-01T${value}:00`);
-      const diffMs = outTime - inTime;
-      if (diffMs < 60000) { // פחות מדקה
-        setToastMessage('שעת היציאה חייבת להיות לפחות דקה אחרי שעת הכניסה');
-        updatedReports[index].timeOut = '';
+    // בדיקת תקינות תאריך ושעת יציאה
+    if ((field === 'timeOut' || field === 'dateOut') && updatedReports[index].timeIn) {
+      const inDateTime = new Date(`${updatedReports[index].dateIn}T${updatedReports[index].timeIn}:00`);
+      const outDateTime = new Date(`${updatedReports[index].dateOut}T${updatedReports[index].timeOut || '00:00'}:00`);
+      
+      if (outDateTime < inDateTime) {
+        setToastMessage('תאריך ושעת היציאה חייבים להיות אחרי תאריך ושעת הכניסה');
+        if (field === 'dateOut') {
+          updatedReports[index].dateOut = updatedReports[index].dateIn;
+        } else {
+          updatedReports[index].timeOut = '';
+        }
+      } else if (field === 'timeOut' && updatedReports[index].dateIn === updatedReports[index].dateOut) {
+        const inTime = new Date(`2000-01-01T${updatedReports[index].timeIn}:00`);
+        const outTime = new Date(`2000-01-01T${value}:00`);
+        const diffMs = outTime - inTime;
+        if (diffMs < 60000) { // פחות מדקה
+          setToastMessage('שעת היציאה חייבת להיות לפחות דקה אחרי שעת הכניסה');
+          updatedReports[index].timeOut = '';
+        }
       }
     }
 
