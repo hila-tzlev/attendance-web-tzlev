@@ -103,12 +103,30 @@ const ManualUpdateScreen = () => {
     return `${hours} שעות ו-${minutes} דקות`;
   };
 
+  const isReportTimeValid = (report) => {
+    if (!report.timeIn || !report.timeOut || !report.dateIn || !report.dateOut) return true;
+    const inDateTime = new Date(`${report.dateIn}T${report.timeIn}:00`);
+    const outDateTime = new Date(`${report.dateOut}T${report.timeOut}:00`);
+    return outDateTime > inDateTime;
+  };
+
+  const areAllReportsValid = () => {
+    return reports.every(report => isReportValid(report) && isReportTimeValid(report));
+  };
+
   const handleSave = () => {
     const allValid = reports.every(isReportValid);
     if (!allValid) {
       setToastMessage('יש למלא את כל השדות בכל הדיווחים לפני שמירה');
       return;
     }
+    
+    const allTimeValid = reports.every(isReportTimeValid);
+    if (!allTimeValid) {
+      setToastMessage('לא ניתן לשמור דיווחים עם שעות לא תקינות');
+      return;
+    }
+
     setToastMessage('הדיווח נשמר ויועבר לאישור מנהל');
     setTimeout(() => {
       navigate('/home');
@@ -199,7 +217,12 @@ const ManualUpdateScreen = () => {
           +
         </span>
       </div>
-      <Button title="שמור עדכון" onClick={handleSave} />
+      <Button 
+        title="שמור עדכון" 
+        onClick={handleSave} 
+        disabled={!areAllReportsValid()}
+        style={{ opacity: areAllReportsValid() ? 1 : 0.5, cursor: areAllReportsValid() ? 'pointer' : 'not-allowed' }}
+      />
       <Button title="חזור" onClick={handleBack} />
       {toastMessage && (
         <ToastNotification message={toastMessage} onClose={() => setToastMessage(null)} />
